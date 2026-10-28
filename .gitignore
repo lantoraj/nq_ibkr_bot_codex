@@ -1,0 +1,38 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+venv/
+.env
+
+state/
+
+# Account credentials and local configuration
+.env.*
+!.env.example
+secrets/
+credentials/
+config.local.*
+*.pem
+*.key
+
+# Broker/account state and execution databases (including SQLite sidecars)
+account_state/
+runtime/
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+
+# Runtime logs and paper-session diagnostics
+logs/
+*.log
+*.log.*
+paper_preflight*.json
+paper_session*
+paper_reports/
+reports/paper*/
+outputs/

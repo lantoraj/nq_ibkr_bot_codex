@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+</head>
+<body class="bg-transparent text-[var(--foreground)] antialiased p-3">
+  <div class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] rounded-xl p-4 shadow-sm space-y-3">
+    <!-- Header & Controls -->
+    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] pb-3">
+      <div>
+        <h3 class="font-semibold text-base text-[var(--foreground)]">Upgraded v3 Strategy Visualizer (Jul 27 – Oct 27, 2026)</h3>
+        <p class="text-xs text-[var(--muted-foreground)]">109 Trades • VWAP Z-Band (0.20σ–2.30σ) + PDH/PDL Wall Guard + Wick Filter + +1R Break-Even</p>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <button id="tab-equity" onclick="switchTab('equity')" class="px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--primary)] text-[var(--primary-foreground)]">Equity Curve (v3 vs v2)</button>
+        <button id="tab-guards" onclick="switchTab('guards')" class="px-2.5 py-1 rounded-md text-xs font-medium border border-[var(--border)] text-[var(--muted-foreground)]">New v3 Structural Guards</button>
+        <button id="btn-mult" onclick="toggleContract()" class="ml-1 px-2.5 py-1 rounded-md text-xs font-semibold border border-[var(--border)] bg-[var(--secondary)] text-[var(--secondary-foreground)]">1 MNQ ($2/pt)</button>
+      </div>
+    </div>
+
+    <!-- KPI Row -->
+    <div class="grid grid-cols-4 gap-2 text-center">
+      <div class="border border-[var(--border)] rounded-lg p-2">
+        <div class="text-xs text-[var(--muted-foreground)]">Net Profit (v3)</div>
+        <div id="kpi-pnl" class="text-sm font-bold text-emerald-500">+$2,735.34</div>
+        <div class="text-xs text-emerald-500">+33% vs v2 (+$2,057)</div>
+      </div>
+      <div class="border border-[var(--border)] rounded-lg p-2">
+        <div class="text-xs text-[var(--muted-foreground)]">Non-Losing Rate</div>
+        <div class="text-sm font-bold text-[var(--foreground)]">58.72%</div>
+        <div class="text-xs text-[var(--muted-foreground)]">29 TP • 35 BE • 45 SL</div>
+      </div>
+      <div class="border border-[var(--border)] rounded-lg p-2">
+        <div class="text-xs text-[var(--muted-foreground)]">Profit Factor / Sharpe</div>
+        <div class="text-sm font-bold text-emerald-500">1.85 / 2.28</div>
+        <div class="text-xs text-[var(--muted-foreground)]">Up from 1.53 / 1.66</div>
+      </div>
+      <div class="border border-[var(--border)] rounded-lg p-2">
+        <div class="text-xs text-[var(--muted-foreground)]">Max Drawdown</div>
+        <div id="kpi-dd" class="text-sm font-bold text-amber-500">$914.26</div>
+        <div class="text-xs text-emerald-500">-28.8% lower DD</div>
+      </div>
+    </div>
+
+    <!-- View 1: Equity Curve SVG (v3 Solid Green vs v2 Dashed Indigo) -->
+    <div id="view-equity" class="space-y-1.5">
+      <div class="relative w-full h-48 border border-[var(--border)] rounded-lg p-2 overflow-hidden">
+        <svg id="equity-svg" viewBox="0 0 700 175" class="w-full h-full overflow-visible"></svg>
+        <div id="chart-tooltip" class="hidden absolute top-2 left-3 bg-[var(--card)] border border-[var(--border)] rounded px-2 py-1 text-xs shadow"></div>
+      </div>
+      <div class="flex flex-wrap items-center justify-between text-xs text-[var(--muted-foreground)] px-1">
+        <span class="flex items-center gap-1.5"><span class="inline-block w-3 h-0.5 bg-emerald-500"></span> <strong>v3 Upgraded</strong> (+$2,735)</span>
+        <span class="flex items-center gap-1.5"><span class="inline-block w-3 h-0.5 bg-indigo-400"></span> v2 Baseline (+$2,057)</span>
+        <span>Jul: <strong class="text-emerald-500">+$313</strong> • Aug: <strong>-$11</strong> (was -$491) • Sep: <strong class="text-emerald-500">+$638</strong> • Oct: <strong class="text-emerald-500">+$1,796</strong></span>
+      </div>
+    </div>
+
+    <!-- View 2: Visual Explanation of the 3 New v3 Guards -->
+    <div id="view-guards" class="hidden space-y-1.5">
+      <div class="relative w-full h-48 border border-[var(--border)] rounded-lg p-2 overflow-hidden">
+        <svg viewBox="0 0 700 175" class="w-full h-full">
+          <!-- Guard 1: PDH Overhead Resistance Zone -->
+          <rect x="20" y="10" width="210" height="24" fill="#f43f5e" fill-opacity="0.15" stroke="#f43f5e" stroke-dasharray="4,2" rx="4"/>
+          <text x="28" y="26" fill="#f43f5e" font-size="12" font-weight="700">Guard 1: Prior Day High (PDH Wall)</text>
+          <text x="28" y="46" fill="currentColor" opacity="0.8" font-size="12">Blocks Longs within 0.5x ATR below PDH</text>
+
+          <!-- Guard 2: VWAP Z-Score Goldilocks Zone -->
+          <rect x="20" y="60" width="210" height="58" fill="#10b981" fill-opacity="0.12" stroke="#10b981" rx="4"/>
+          <text x="28" y="78" fill="#10b981" font-size="12" font-weight="700">Guard 2: VWAP Z-Band (0.2σ–2.3σ)</text>
+          <text x="28" y="96" fill="currentColor" opacity="0.8" font-size="12">• &gt; 2.3σ: Blocks Exhausted Tops</text>
+          <text x="28" y="112" fill="currentColor" opacity="0.8" font-size="12">• &lt; 0.2σ: Blocks Flat VWAP Chop</text>
+
+          <!-- Session VWAP Line -->
+          <line x1="20" y1="142" x2="230" y2="142" stroke="#6366f1" stroke-width="2" stroke-dasharray="4,3"/>
+          <text x="28" y="158" fill="#6366f1" font-size="12" font-weight="600">Session VWAP Anchor (0.0σ)</text>
+
+          <!-- Guard 3: Opposing Wick Rejection Comparison -->
+          <rect x="255" y="10" width="425" height="152" fill="none" stroke="currentColor" stroke-opacity="0.2" rx="6"/>
+          <text x="270" y="30" fill="currentColor" font-size="12" font-weight="700">Guard 3: Opposing Wick Rejection Filter (&le; 40% Wick)</text>
+
+          <!-- Rejected Candle (Long Upper Wick > 40%) -->
+          <line x1="355" y1="45" x2="355" y2="135" stroke="#f43f5e" stroke-width="2.5"/>
+          <rect x="341" y="98" width="28" height="26" fill="#f43f5e" rx="2"/>
+          <text x="295" y="152" fill="#f43f5e" font-size="12" font-weight="600">REJECTED (&gt;40% Seller Wick)</text>
+
+          <!-- Approved Candle (Strong Body, Small Upper Wick <= 40%) -->
+          <line x1="555" y1="48" x2="555" y2="135" stroke="#10b981" stroke-width="2.5"/>
+          <rect x="541" y="58" width="28" height="62" fill="#10b981" rx="2"/>
+          <text x="485" y="152" fill="#10b981" font-size="12" font-weight="600">APPROVED (Clean Bull Close)</text>
+        </svg>
+      </div>
+      <div class="text-xs text-[var(--muted-foreground)] px-1">
+        Together, these 3 guards filtered out <strong>10 bull/bear trap trades</strong> in August and September, cutting the August drawdown from <strong>-$491.34</strong> down to <strong>-$11.36</strong>.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const pnlsV3 = [0.26, 238.26, 238.26, -82.24, 0.26, -82.24, 0.26, 238.26, 179.76, 203.76, -47.74, 0.26, 0.26, 0.26, -82.24, -82.24, 0.26, -75.24, 0.26, -80.24, -65.74, -82.24, -82.24, -55.24, 163.26, -54.74, -69.74, 0.26, 0.26, -55.24, -82.24, 0.26, -82.24, -82.24, 0.26, 164.76, 179.76, 0.26, -71.24, 0.26, -82.24, -82.24, 0.26, 238.26, 0.26, -67.24, 146.76, -69.24, 0.26, 238.26, 0.26, 190.26, -82.24, 0.26, -71.74, 211.26, -74.24, -64.24, -43.24, 158.76, -48.24, -56.74, 137.76, 0.26, 0.26, -53.24, 98.76, 0.26, -80.74, -57.74, -76.74, 0.26, 0.26, -69.24, 238.26, 227.76, 0.26, 0.26, -82.24, -82.24, 0.26, -82.24, 230.76, 184.26, 0.26, -57.24, 140.76, 0.26, -69.24, -51.24, 0.26, 0.26, 238.26, 238.26, -82.24, 0.26, 238.26, 0.26, 238.26, 238.26, 0.26, 238.26, -82.24, -82.24, 238.26, -82.24, -64.74, 0.26, 223.26];
+    const datesV3 = ["Jul 28", "Jul 29", "Jul 29", "Jul 30", "Jul 30", "Jul 31", "Jul 31", "Aug 03", "Aug 03", "Aug 04", "Aug 04", "Aug 05", "Aug 05", "Aug 06", "Aug 06", "Aug 07", "Aug 07", "Aug 10", "Aug 10", "Aug 11", "Aug 11", "Aug 12", "Aug 12", "Aug 13", "Aug 14", "Aug 14", "Aug 17", "Aug 17", "Aug 18", "Aug 18", "Aug 19", "Aug 19", "Aug 20", "Aug 20", "Aug 21", "Aug 21", "Aug 24", "Aug 25", "Aug 25", "Aug 26", "Aug 27", "Aug 27", "Aug 28", "Aug 28", "Aug 31", "Aug 31", "Sep 01", "Sep 02", "Sep 03", "Sep 03", "Sep 04", "Sep 04", "Sep 08", "Sep 08", "Sep 09", "Sep 09", "Sep 10", "Sep 10", "Sep 11", "Sep 15", "Sep 15", "Sep 16", "Sep 16", "Sep 17", "Sep 18", "Sep 18", "Sep 21", "Sep 22", "Sep 23", "Sep 23", "Sep 24", "Sep 24", "Sep 25", "Sep 25", "Sep 28", "Sep 28", "Sep 29", "Sep 29", "Sep 30", "Sep 30", "Oct 01", "Oct 01", "Oct 02", "Oct 05", "Oct 06", "Oct 07", "Oct 07", "Oct 08", "Oct 09", "Oct 09", "Oct 12", "Oct 13", "Oct 14", "Oct 14", "Oct 15", "Oct 16", "Oct 16", "Oct 19", "Oct 19", "Oct 20", "Oct 21", "Oct 22", "Oct 22", "Oct 23", "Oct 23", "Oct 26", "Oct 26", "Oct 27", "Oct 27"];
+    const pnlsV2 = [0.26, 238.26, 238.26, -82.24, 0.26, -82.24, 0.26, 238.26, 179.76, 203.76, -47.74, -82.24, 0.26, 0.26, -82.24, -82.24, 0.26, 0.26, -75.24, -80.24, -65.74, -82.24, -82.24, -55.24, -45.24, -69.74, 163.26, -69.74, 0.26, 0.26, -55.24, 0.26, -82.24, -82.24, -82.24, -82.24, 0.26, 179.76, 0.26, -82.24, -79.24, 0.26, -82.24, -82.24, 0.26, 238.26, 0.26, -67.24, 146.76, -69.24, 0.26, 0.26, 238.26, 0.26, 190.26, -82.24, 191.76, -71.74, 211.26, -82.24, -82.24, -78.24, -66.24, -67.74, 158.76, -48.24, -55.24, 137.76, 0.26, -56.24, -53.24, 98.76, 0.26, -42.74, -80.74, -66.74, -77.24, -63.24, 0.26, -69.24, 238.26, 227.76, 0.26, 0.26, -82.24, -82.24, 0.26, 0.26, 230.76, 184.26, 0.26, -57.24, 140.76, 0.26, 0.26, -70.24, -69.24, 0.26, -70.74, 0.26, 238.26, 238.26, 0.26, -82.24, 0.26, 238.26, 0.26, 238.26, 238.26, -82.24, 0.26, 238.26, -82.24, -82.24, 238.26, -82.24, 0.26, 0.26, 223.26];
+
+    let mult = 1;
+
+    function switchTab(tab) {
+      const eq = document.getElementById('view-equity');
+      const gd = document.getElementById('view-guards');
+      const bEq = document.getElementById('tab-equity');
+      const bGd = document.getElementById('tab-guards');
+      if (tab === 'equity') {
+        eq.classList.remove('hidden');
+        gd.classList.add('hidden');
+        bEq.className = "px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--primary)] text-[var(--primary-foreground)]";
+        bGd.className = "px-2.5 py-1 rounded-md text-xs font-medium border border-[var(--border)] text-[var(--muted-foreground)]";
+      } else {
+        eq.classList.add('hidden');
+        gd.classList.remove('hidden');
+        bGd.className = "px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--primary)] text-[var(--primary-foreground)]";
+        bEq.className = "px-2.5 py-1 rounded-md text-xs font-medium border border-[var(--border)] text-[var(--muted-foreground)]";
+      }
+    }
+
+    function toggleContract() {
+      mult = (mult === 1) ? 10 : 1;
+      document.getElementById('btn-mult').textContent = mult === 1 ? "1 MNQ ($2/pt)" : "1 NQ ($20/pt)";
+      document.getElementById('kpi-pnl').textContent = "+$" + (2735.34 * mult).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      document.getElementById('kpi-dd').textContent = "$" + (914.26 * mult).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      renderEquity();
+    }
+
+    function renderEquity() {
+      const svg = document.getElementById('equity-svg');
+      const tooltip = document.getElementById('chart-tooltip');
+      svg.innerHTML = '';
+
+      let cum3 = [0], s3 = 0;
+      for (let p of pnlsV3) { s3 += p * mult; cum3.push(s3); }
+      let cum2 = [0], s2 = 0;
+      for (let p of pnlsV2) { s2 += p * mult; cum2.push(s2); }
+
+      const W = 700, H = 175, padL = 52, padR = 14, padT = 12, padB = 22;
+      const minV = Math.min(-400 * mult, ...cum3, ...cum2);
+      const maxV = Math.max(2850 * mult, ...cum3);
+
+      const xOf3 = i => padL + (i / (cum3.length - 1)) * (W - padL - padR);
+      const xOf2 = i => padL + (i / (cum2.length - 1)) * (W - padL - padR);
+      const yOf = v => padT + (1 - (v - minV) / (maxV - minV)) * (H - padT - padB);
+
+      const yZero = yOf(0);
+      svg.insertAdjacentHTML('beforeend', `<line x1="${padL}" y1="${yZero}" x2="${W-padR}" y2="${yZero}" stroke="currentColor" stroke-opacity="0.25" stroke-dasharray="4,4"/>`);
+      svg.insertAdjacentHTML('beforeend', `<text x="4" y="${yZero+4}" fill="currentColor" opacity="0.6" font-size="12">$0</text>`);
+      svg.insertAdjacentHTML('beforeend', `<text x="4" y="${yOf(maxV)+8}" fill="#10b981" font-size="12">+$${Math.round(maxV).toLocaleString()}</text>`);
+
+      // v2 Dashed curve
+      let dLine2 = cum2.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xOf2(i).toFixed(1)} ${yOf(v).toFixed(1)}`).join(' ');
+      svg.insertAdjacentHTML('beforeend', `<path d="${dLine2}" fill="none" stroke="#818cf8" stroke-width="1.6" stroke-dasharray="4,3" opacity="0.75"/>`);
+
+      // v3 Solid curve & area
+      let dLine3 = cum3.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xOf3(i).toFixed(1)} ${yOf(v).toFixed(1)}`).join(' ');
+      let dArea3 = `${dLine3} L ${xOf3(cum3.length-1).toFixed(1)} ${yZero.toFixed(1)} L ${xOf3(0).toFixed(1)} ${yZero.toFixed(1)} Z`;
+      svg.insertAdjacentHTML('beforeend', `<path d="${dArea3}" fill="#10b981" fill-opacity="0.14"/>`);
+      svg.insertAdjacentHTML('beforeend', `<path d="${dLine3}" fill="none" stroke="#10b981" stroke-width="2.4"/>`);
+
+      for (let i = 0; i < pnlsV3.length; i++) {
+        const cx = xOf3(i + 1).toFixed(1);
+        const cy = yOf(cum3[i + 1]).toFixed(1);
+        const p = pnlsV3[i] * mult;
+        const color = p > 10 * mult ? '#10b981' : (p >= 0 ? '#fbbf24' : '#f43f5e');
+        const label = p > 10 * mult ? 'Take Profit (+3R)' : (p >= 0 ? 'Break-Even (+1pt)' : 'Stop Loss (-1R)');
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', cx);
+        circle.setAttribute('cy', cy);
+        circle.setAttribute('r', '3.3');
+        circle.setAttribute('fill', color);
+        circle.classList.add('cursor-pointer');
+        circle.addEventListener('mouseenter', () => {
+          tooltip.classList.remove('hidden');
+          tooltip.innerHTML = `<strong>Trade #${i+1} (${datesV3[i]})</strong> • ${label} • Trade: <strong>${p >= 0 ? '+' : ''}$${p.toFixed(2)}</strong> • v3 Cum: <strong>$${cum3[i+1].toFixed(2)}</strong>`;
+        });
+        svg.appendChild(circle);
+      }
+
+      const monthIdx = [{i: 1, m: 'Jul 28'}, {i: 8, m: 'Aug'}, {i: 47, m: 'Sep'}, {i: 81, m: 'Oct'}, {i: 109, m: 'Oct 27'}];
+      for (let m of monthIdx) {
+        svg.insertAdjacentHTML('beforeend', `<text x="${xOf3(m.i)-12}" y="${H-3}" fill="currentColor" opacity="0.65" font-size="12">${m.m}</text>`);
+      }
+    }
+
+    renderEquity();
+  </script>
+</body>
+</html>
